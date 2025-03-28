@@ -1,0 +1,2 @@
+org.springframework.test.context.ContextCustomizerFactory = \
+    com.int6016.kiemthu.config.TestContainersSpringContextCustomizerFactory
