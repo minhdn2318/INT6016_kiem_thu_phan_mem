@@ -1,5 +1,4 @@
-
-# 🎓 Quản lý học viên – Kiểm thử tự động bằng Randoop
+# 🎓 Quản lý học viên – Kiểm thử tự động bằng Randoop & Maven
 
 ## 📌 Mô tả bài toán
 
@@ -17,70 +16,87 @@ Hệ thống quản lý học viên và đăng ký khóa học, bao gồm:
 
 ```
 student-randoop/
-├── Student.java
-├── Course.java
-├── StudentManager.java
-├── randoop-all-4.3.3.jar
-└── randoop-tests/          ← Tự sinh sau khi chạy Randoop
+├── pom.xml                  ← Dự án Maven tích hợp code chính và test Randoop
+├── src/
+│   ├── main/
+│   │   └── java/
+│   │       └── your/package/
+│   │           ├── Student.java
+│   │           ├── Course.java
+│   │           └── StudentManager.java
+│   └── test/
+│       └── java/
+│           └── your/package/
+│               └── RegressionTest0.java (và các file .java do Randoop sinh ra)
+└── randoop-all-4.3.3.jar     ← JAR Randoop (nếu chạy thủ công)
 ```
 
 ---
 
-## ⚙️ Các bước kiểm thử bằng Randoop
+## ⚙️ Các bước kiểm thử bằng Randoop (thủ công)
 
 ### Bước 1: Biên dịch toàn bộ mã nguồn
 
 ```bash
-javac *.java
+javac -d target/classes src/main/java/*.java
 ```
-
----
 
 ### Bước 2: Chạy Randoop để sinh test tự động
 
 ```bash
-java -cp ".;randoop-all-4.3.3.jar" randoop.main.Main gentests --testclass=StudentManager --time-limit=15 --junit-output-dir=randoop-tests
+java -cp "target/classes;randoop-all-4.3.3.jar" randoop.main.Main gentests     --testclass=your.package.StudentManager     --time-limit=15     --junit-output-dir=src/test/java/your/package/
 ```
 
-👉 Sau bước này, thư mục `randoop-tests/` sẽ xuất hiện với các file như `RegressionTest0.java`.
+👉 Sau bước này, `src/test/java/` sẽ chứa các file `RegressionTest*.java`.
 
 ---
 
-### Bước 3: Biên dịch test
+## ⚙️ Chạy test bằng Maven
+
+Maven sẽ tự động biên dịch code chính và test, rồi chạy với JUnit & Surefire.
 
 ```bash
-javac -cp ".;randoop-all-4.3.3.jar;randoop-tests" randoop-tests\RegressionTest0.java
+# Biên dịch và chạy tất cả test
+mvn clean test
 ```
 
----
+#### ✅ Redirect log ra file và kiểm tra lỗi
 
-### Bước 4: Chạy test bằng JUnit
-
-```bash
-java -cp ".;randoop-all-4.3.3.jar;randoop-tests" org.junit.runner.JUnitCore RegressionTest0
-```
+- Chuyển toàn bộ đầu ra và lỗi vào file `test.log`:
+  ```bash
+  mvn clean test > test.log 2>&1
+  ```
+- Kiểm tra exit code để xác nhận:
+  ```bash
+  echo $?
+  # 0  → Thành công, không có failure
+  # >0 → Có lỗi/testrunner thất bại
+  ```
+- Tìm nhanh chuỗi `FAILURE` hay `ERROR` trong log:
+  ```bash
+  grep -E "\b(FAILURE|ERROR)\b" test.log
+  ```
 
 ---
 
 ## 🐞 Các lỗi logic có thể được phát hiện
 
-- Thêm học viên trùng → Exception
-- Đăng ký khóa học cho học viên chưa tồn tại → Exception
-- Đăng ký trùng khóa học → Exception
-- Truy vấn học viên chưa tồn tại → Exception
+- Thêm học viên trùng → `IllegalArgumentException`
+- Đăng ký khóa học cho học viên chưa tồn tại → `NoSuchElementException`
+- Đăng ký trùng khóa học → `IllegalStateException`
+- Truy vấn học viên chưa tồn tại → `NoSuchElementException`
 
-✅ Những điều này sẽ được Randoop sinh test và kiểm tra tự động.
+✅ Randoop sẽ sinh test để kiểm tra tự động các tình huống trên.
 
 ---
 
 ## 📊 Giải thích log Randoop (tiêu biểu)
 
-| Thông số                         | Ý nghĩa                                                                 |
-|----------------------------------|-------------------------------------------------------------------------|
-| `Regression test count`          | Số lượng test hồi quy được tạo                                         |
-| `Exceptional method executions`  | Số lần xảy ra lỗi/exception khi gọi hàm                               |
-| `error seqs`                     | Số chuỗi lệnh gây lỗi nghiêm trọng                                     |
-| `No error-revealing tests`       | Nếu có → Randoop không tìm ra lỗi nghiêm trọng nào                     |
-
+| Thông số                         | Ý nghĩa                                   |
+|----------------------------------|-------------------------------------------|
+| `Regression test count`          | Số lượng test hồi quy được tạo            |
+| `Exceptional method executions`  | Số lần xảy ra exception khi gọi hàm       |
+| `error seqs`                     | Số chuỗi lệnh gây lỗi nghiêm trọng         |
+| `No error-revealing tests`       | Nếu có → Randoop không tìm ra lỗi nghiêm trọng nào |
 
 Chúc bạn học tốt và kiểm thử thành công! 🚀
